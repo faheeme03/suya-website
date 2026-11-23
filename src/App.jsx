@@ -1,50 +1,67 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Sparkles, Volume2, VolumeX, RotateCcw, CheckCircle, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Heart, Sparkles, Volume2, VolumeX, RotateCcw, ShieldCheck, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import CuteCharacter from './components/CuteCharacter';
 import { sounds } from './utils/audio';
 
 export default function App() {
-  // Stages: 1 = Main Proposal, 2 = The Funny Agreement, 3 = Grand Celebration
+  // Stages: 1 = Main Proposal, 2 = The Agreement, 3 = Grand Celebration
   const [stage, setStage] = useState(1);
 
-  // Stage 1 State
+  // Stage 1 State (Slow & steady YES growth over 10+ hovers)
   const [noCount, setNoCount] = useState(0);
-  const [yesScale, setYesScale] = useState(1);
   const [noPosition, setNoPosition] = useState({ x: 0, y: 0 });
 
-  // Stage 2 State
+  // Stage 2 State (Slow shrinking until complete disappearance)
   const [stage2NoCount, setStage2NoCount] = useState(0);
   const [stage2NoPosition, setStage2NoPosition] = useState({ x: 0, y: 0 });
-  const [stage2NoTransformed, setStage2NoTransformed] = useState(false);
+  const [stage2Disappeared, setStage2Disappeared] = useState(false);
 
   // Character State: 'default' | 'shocked' | 'stage2' | 'happy'
   const [characterState, setCharacterState] = useState('default');
   const [isMuted, setIsMuted] = useState(false);
   const containerRef = useRef(null);
 
-  // Funny Tamil/English phrases for Stage 1 NO button
+  const STAGE_2_MAX_SHRINKS = 7;
+
+  // Funny Tamil/English phrases for Stage 1 NO button (14 progressive steps)
   const stage1NoPhrases = [
     "No 🥺",
-    "Aiyoyo Thangapulla! 🥺",
+    "Are you sure Thangapulla? 🥺",
     "Think again Simjim! 💔",
+    "Surya is watching pa! 🥺",
     "Surya mattum thaan option! 😤",
-    "Look how giant YES is! 👉",
-    "No button broken sorry! 🏃‍♂️💨",
+    "Look, YES is growing! 👉",
     "Unaku manase illaya? 😭",
-    "Surya will cry pa! 🥹",
-    "Just click YES already! 💙",
-    "NO has left the chat! Bye! 👋😂"
+    "Surya will cry Thangapulla! 🥹",
+    "You can't escape his love! 🏃‍♂️💨",
+    "Still trying to click No?! 😂",
+    "YES is getting huge now! 👑",
+    "No option illa, give up! 😜",
+    "Almost covering everything! 💙",
+    "Just click YES already! 🥰💍"
   ];
 
-  // Stage 2 funny phrases
+  // Stage 2 funny progressive phrases as it slowly shrinks
   const stage2NoPhrases = [
     "No promises 😜",
     "Wait, I shrank?! 🤏",
-    "Almost microscopic! 😂",
-    "Actually YES! 🥰💙"
+    "Hey! Stop it! 🥺",
+    "Getting smaller! 😂",
+    "Almost tiny now! 🔍",
+    "Where did I go?! 💨",
+    "Poof! Bye bye! 🏃‍♂️💨"
   ];
+
+  // Smooth, gradual scaling for Stage 1 YES button across 10+ hovers
+  const getYesScale = (count) => {
+    if (count === 0) return 1.0;
+    if (count <= 10) {
+      return 1.0 + count * 0.18 + (count >= 4 ? (count - 3) * 0.14 : 0);
+    }
+    return Math.min(3.8 + (count - 10) * 0.3, 5.2);
+  };
 
   // Start background music on user's first touch/interaction
   const handleInteractionStart = () => {
@@ -56,7 +73,7 @@ export default function App() {
     setIsMuted(muted);
   };
 
-  // =================== STAGE 1: NO BUTTON EVASION & DRASTIC YES GROWTH ===================
+  // =================== STAGE 1: SLOW & STEADY YES GROWTH OVER 10+ HOVERS ===================
   const handleStage1NoInteraction = (e) => {
     e?.preventDefault?.();
     e?.stopPropagation?.();
@@ -70,24 +87,12 @@ export default function App() {
     setCharacterState('shocked');
     setTimeout(() => {
       setCharacterState('default');
-    }, 800);
-
-    // Drastic YES growth in just 2 clicks!
-    // Click 1: jumps to 2.4x
-    // Click 2: jumps to 4.2x (huge!)
-    // 3+ up to 10: scales up to 6.2x
-    if (nextCount === 1) {
-      setYesScale(2.4);
-    } else if (nextCount === 2) {
-      setYesScale(4.2);
-    } else {
-      setYesScale((prev) => Math.min(prev + 0.5, 6.2));
-    }
+    }, 750);
 
     // Dodging movement across display (responsive for mobile & desktop)
     const isMobile = window.innerWidth < 640;
-    const maxX = isMobile ? 120 : 180;
-    const maxY = isMobile ? 80 : 120;
+    const maxX = isMobile ? 110 : 170;
+    const maxY = isMobile ? 70 : 110;
     const randomX = (Math.random() - 0.5) * maxX * 1.8;
     const randomY = (Math.random() - 0.5) * maxY * 1.8;
     setNoPosition({ x: randomX, y: randomY });
@@ -101,7 +106,7 @@ export default function App() {
 
     // Mini celebratory burst
     confetti({
-      particleCount: 40,
+      particleCount: 45,
       spread: 60,
       origin: { y: 0.7 },
       colors: ['#38BDF8', '#2563EB', '#60A5FA', '#FBBF24']
@@ -110,34 +115,39 @@ export default function App() {
     setStage(2);
   };
 
-  // =================== STAGE 2: NO BUTTON SHRINKS & TRANSFORMS INTO YES ===================
+  // =================== STAGE 2: SLOW SHRINKING UNTIL DISAPPEARANCE ===================
   const handleStage2NoInteraction = (e) => {
     e?.preventDefault?.();
     e?.stopPropagation?.();
     handleInteractionStart();
 
-    if (stage2NoTransformed) {
-      // If already transformed into YES, treat as YES!
-      handleFinalYesClick();
-      return;
-    }
+    if (stage2Disappeared) return;
 
     const nextCount = stage2NoCount + 1;
     setStage2NoCount(nextCount);
-    sounds.playShrink();
 
-    // After 2 shrinks, it morphs into another YES button!
-    if (nextCount >= 3) {
-      setStage2NoTransformed(true);
+    if (nextCount >= STAGE_2_MAX_SHRINKS) {
+      setStage2Disappeared(true);
+      sounds.playPoof();
+
+      // Magic sparkle burst when No vanishes!
+      confetti({
+        particleCount: 30,
+        spread: 55,
+        origin: { y: 0.65 },
+        colors: ['#38BDF8', '#60A5FA', '#93C5FD', '#FBBF24']
+      });
       return;
     }
 
-    // Dodge in stage 2
+    sounds.playShrink(nextCount);
+
+    // Gentle dodge while shrinking
     const isMobile = window.innerWidth < 640;
-    const maxX = isMobile ? 100 : 150;
-    const maxY = isMobile ? 70 : 100;
-    const randomX = (Math.random() - 0.5) * maxX * 1.6;
-    const randomY = (Math.random() - 0.5) * maxY * 1.6;
+    const maxX = isMobile ? 90 : 130;
+    const maxY = isMobile ? 60 : 80;
+    const randomX = (Math.random() - 0.5) * maxX * 1.5;
+    const randomY = (Math.random() - 0.5) * maxY * 1.5;
     setStage2NoPosition({ x: randomX, y: randomY });
   };
 
@@ -178,13 +188,14 @@ export default function App() {
   const handleReset = () => {
     setStage(1);
     setNoCount(0);
-    setYesScale(1);
     setNoPosition({ x: 0, y: 0 });
     setStage2NoCount(0);
     setStage2NoPosition({ x: 0, y: 0 });
-    setStage2NoTransformed(false);
+    setStage2Disappeared(false);
     setCharacterState('default');
   };
+
+  const yesScale = getYesScale(noCount);
 
   return (
     <div
@@ -279,7 +290,7 @@ export default function App() {
       >
         <AnimatePresence mode="wait">
           {stage === 1 ? (
-            /* =================== STAGE 1: THE MAIN PROPOSAL =================== */
+            /* =================== STAGE 1: THE PROPOSAL (SLOW GRADUAL YES GROWTH) =================== */
             <motion.div
               key="stage-1"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -305,7 +316,7 @@ export default function App() {
 
               {/* Buttons Arena */}
               <div className="relative w-full flex items-center justify-center gap-4 sm:gap-6 min-h-[120px] my-2">
-                {/* YES BUTTON (Grows drastically in 2 attempts!) */}
+                {/* YES BUTTON (Grows steadily and slowly over 10+ attempts!) */}
                 <motion.button
                   onClick={handleStage1YesClick}
                   animate={{
@@ -313,10 +324,10 @@ export default function App() {
                   }}
                   whileHover={{ scale: yesScale * 1.05 }}
                   whileTap={{ scale: yesScale * 0.95 }}
-                  transition={{ type: 'spring', stiffness: 350, damping: 22 }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 22 }}
                   style={{
-                    fontSize: `${Math.min(18 + noCount * 6, 38)}px`,
-                    padding: `${Math.min(14 + noCount * 8, 34)}px ${Math.min(32 + noCount * 14, 76)}px`,
+                    fontSize: `${Math.min(18 + noCount * 1.5, 36)}px`,
+                    padding: `${Math.min(14 + noCount * 1.6, 30)}px ${Math.min(30 + noCount * 3.5, 68)}px`,
                   }}
                   className="rounded-full bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-bold shadow-[0_8px_30px_rgba(37,99,235,0.45)] hover:brightness-105 active:scale-95 transition-shadow z-30 cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap"
                 >
@@ -324,24 +335,24 @@ export default function App() {
                   <Heart className="w-5 h-5 fill-white shrink-0" />
                 </motion.button>
 
-                {/* NO BUTTON (Dodges wildly + pushed out as YES gets gigantic) */}
+                {/* NO BUTTON (Dodges smoothly + fades as YES dominates after 8-10 hovers) */}
                 <motion.button
                   animate={{
                     x: noPosition.x,
                     y: noPosition.y,
-                    opacity: noCount >= 8 ? 0.3 : 1,
+                    opacity: noCount <= 7 ? 1 : Math.max(0.25, 1 - (noCount - 7) * 0.16),
                   }}
                   onMouseEnter={handleStage1NoInteraction}
                   onClick={handleStage1NoInteraction}
                   onTouchStart={handleStage1NoInteraction}
-                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                  transition={{ type: 'spring', stiffness: 460, damping: 24 }}
                   className="px-6 py-3 rounded-full bg-white/95 text-[#1E3A8A] font-bold text-base border-2 border-[#93C5FD] shadow-md hover:bg-blue-50 active:scale-95 transition-colors z-20 cursor-pointer whitespace-nowrap"
                 >
                   {stage1NoPhrases[Math.min(noCount, stage1NoPhrases.length - 1)]}
                 </motion.button>
               </div>
 
-              {/* Playful Evasion Hints */}
+              {/* Playful Evasion Hints (Progresses gently) */}
               <div className="min-h-[28px] mt-4">
                 {noCount > 0 && (
                   <motion.p
@@ -350,17 +361,18 @@ export default function App() {
                     key={noCount}
                     className="text-xs sm:text-sm font-semibold text-[#2563EB]"
                   >
-                    {noCount === 1 && "Hey! Don't you dare touch that! 😤"}
-                    {noCount === 2 && "Are you really saying no to your Surya?! 🥺💔"}
-                    {noCount === 3 && "Look how massive YES is getting! Just click it! 👉"}
-                    {noCount === 4 && "No chance Thangapulla, you're forever his! 💙"}
-                    {noCount >= 5 && "There is literally no escape from saying YES! 🥰👑"}
+                    {noCount <= 2 && "Hey! Don't you dare touch that! 😤"}
+                    {noCount >= 3 && noCount <= 4 && "Are you really trying to say no to your Surya?! 🥺💔"}
+                    {noCount >= 5 && noCount <= 6 && "Look, YES is growing bigger and bigger... 👉"}
+                    {noCount >= 7 && noCount <= 8 && "No chance Thangapulla, you're forever his! 💙"}
+                    {noCount >= 9 && noCount <= 10 && "YES is taking over the screen now! Give up! 😂👑"}
+                    {noCount >= 11 && "There is literally no way out! Just click YES! 🥰💍"}
                   </motion.p>
                 )}
               </div>
             </motion.div>
           ) : stage === 2 ? (
-            /* =================== STAGE 2: THE FUNNY AGREEMENT =================== */
+            /* =================== STAGE 2: SLOW SHRINKING & DISAPPEARING =================== */
             <motion.div
               key="stage-2"
               initial={{ opacity: 0, x: 40 }}
@@ -389,54 +401,98 @@ export default function App() {
                 Lifetime agreement for Simjim & Surya... no cancellations allowed! 🤭
               </p>
 
-              {/* Stage 2 Buttons */}
-              <div className="relative w-full flex items-center justify-center gap-4 sm:gap-6 min-h-[90px] my-2">
-                {/* Main Yes Button */}
-                <motion.button
-                  onClick={handleFinalYesClick}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-7 py-3 rounded-full bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-bold text-base shadow-[0_8px_25px_rgba(37,99,235,0.4)] hover:brightness-105 active:scale-95 transition-all z-30 cursor-pointer flex items-center gap-2"
-                >
-                  <span>100% Yes! 🥰</span>
-                  <Heart className="w-4 h-4 fill-white shrink-0" />
-                </motion.button>
+              {/* Stage 2 Buttons Arena */}
+              <div className="relative w-full flex items-center justify-center min-h-[95px] my-2">
+                <AnimatePresence mode="popLayout">
+                  {!stage2Disappeared ? (
+                    <motion.div
+                      key="stage2-both-buttons"
+                      className="flex items-center justify-center gap-4 sm:gap-6 w-full"
+                    >
+                      {/* Yes Button */}
+                      <motion.button
+                        onClick={handleFinalYesClick}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-7 py-3 rounded-full bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-bold text-base shadow-[0_8px_25px_rgba(37,99,235,0.4)] hover:brightness-105 active:scale-95 transition-all z-30 cursor-pointer flex items-center gap-2"
+                      >
+                        <span>100% Yes! 🥰</span>
+                        <Heart className="w-4 h-4 fill-white shrink-0" />
+                      </motion.button>
 
-                {/* Stage 2 NO Button: Shrinks, dodges, and turns into YES! */}
-                <motion.button
-                  animate={{
-                    x: stage2NoPosition.x,
-                    y: stage2NoPosition.y,
-                    scale: stage2NoTransformed ? 1 : Math.max(0.3, 1 - stage2NoCount * 0.3),
-                  }}
-                  onMouseEnter={handleStage2NoInteraction}
-                  onClick={handleStage2NoInteraction}
-                  onTouchStart={handleStage2NoInteraction}
-                  transition={{ type: 'spring', stiffness: 450, damping: 22 }}
-                  className={`px-6 py-3 rounded-full font-bold text-base shadow-md cursor-pointer transition-colors z-20 whitespace-nowrap ${
-                    stage2NoTransformed
-                      ? 'bg-gradient-to-r from-[#0284C7] to-[#2563EB] text-white border-2 border-white'
-                      : 'bg-white/95 text-[#1E3A8A] border-2 border-[#93C5FD] hover:bg-blue-50'
-                  }`}
-                >
-                  {stage2NoTransformed
-                    ? "Actually YES! 🥰💙"
-                    : stage2NoPhrases[Math.min(stage2NoCount, stage2NoPhrases.length - 1)]}
-                </motion.button>
+                      {/* NO Button: Shrinks SLOWLY on each hover, then poofs away */}
+                      <motion.button
+                        animate={{
+                          x: stage2NoPosition.x,
+                          y: stage2NoPosition.y,
+                          scale: Math.max(0.18, 1 - stage2NoCount * 0.14),
+                        }}
+                        exit={{ opacity: 0, scale: 0, filter: 'blur(6px)' }}
+                        onMouseEnter={handleStage2NoInteraction}
+                        onClick={handleStage2NoInteraction}
+                        onTouchStart={handleStage2NoInteraction}
+                        transition={{ type: 'spring', stiffness: 380, damping: 24 }}
+                        className="px-6 py-3 rounded-full bg-white/95 text-[#1E3A8A] font-bold text-base border-2 border-[#93C5FD] shadow-md hover:bg-blue-50 active:scale-95 transition-colors z-20 cursor-pointer whitespace-nowrap"
+                      >
+                        {stage2NoPhrases[Math.min(stage2NoCount, stage2NoPhrases.length - 1)]}
+                      </motion.button>
+                    </motion.div>
+                  ) : (
+                    /* When NO has disappeared, only YES remains centered with a glowing ring! */
+                    <motion.div
+                      key="stage2-only-yes"
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.45, type: 'spring', bounce: 0.4 }}
+                      className="flex flex-col items-center justify-center w-full"
+                    >
+                      <motion.button
+                        onClick={handleFinalYesClick}
+                        animate={{
+                          scale: [1, 1.06, 1],
+                          boxShadow: [
+                            '0 8px 25px rgba(37,99,235,0.4)',
+                            '0 14px 35px rgba(37,99,235,0.65)',
+                            '0 8px 25px rgba(37,99,235,0.4)',
+                          ],
+                        }}
+                        transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-9 py-4 rounded-full bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white font-bold text-lg shadow-[0_8px_30px_rgba(37,99,235,0.45)] hover:brightness-105 active:scale-95 transition-all z-30 cursor-pointer flex items-center gap-2.5"
+                      >
+                        <span>Yes! I Promise Forever! 🥰💙</span>
+                        <Heart className="w-5 h-5 fill-white shrink-0" />
+                      </motion.button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Stage 2 Hints */}
-              <div className="min-h-[24px] mt-3">
-                {stage2NoCount > 0 && !stage2NoTransformed && (
-                  <p className="text-xs font-semibold text-[#2563EB]">
-                    {stage2NoCount === 1 && "Hey! Look, the No button is shrinking! 😂"}
-                    {stage2NoCount === 2 && "It's almost gone! Just click Yes! 🤏"}
-                  </p>
+              <div className="min-h-[26px] mt-3">
+                {!stage2Disappeared && stage2NoCount > 0 && (
+                  <motion.p
+                    key={stage2NoCount}
+                    initial={{ opacity: 0, y: 3 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs font-semibold text-[#2563EB]"
+                  >
+                    {stage2NoCount === 1 && "Wait... is the No button shrinking?! 🧐"}
+                    {stage2NoCount === 2 && "Hey! It's getting smaller and smaller! 🤏"}
+                    {stage2NoCount === 3 && "You can barely click it now! 😂"}
+                    {stage2NoCount === 4 && "Almost microscopic Thangapulla! 🔍"}
+                    {stage2NoCount >= 5 && "It's about to vanish completely! 💨"}
+                  </motion.p>
                 )}
-                {stage2NoTransformed && (
-                  <p className="text-xs font-bold text-[#059669]">
-                    Haha! The No button surrendered and turned into YES too! 🎉💙
-                  </p>
+                {stage2Disappeared && (
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-xs sm:text-sm font-bold text-[#059669]"
+                  >
+                    Poof! ✨ The 'No' button completely vanished! Only YES is left! 🎉💙
+                  </motion.p>
                 )}
               </div>
             </motion.div>
