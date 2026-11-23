@@ -511,7 +511,7 @@ export default function App() {
               </div>
 
               {/* Status Badge */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold mb-3 border border-emerald-300">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold mb-2 border border-emerald-300">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 <span>OFFICIALLY SEALED FOREVER 🔒✨</span>
               </div>
@@ -520,6 +520,16 @@ export default function App() {
               <h2 className="font-script text-4xl sm:text-5xl font-extrabold text-[#1E3A8A] tracking-tight mb-2">
                 YAAAY! I KNEW IT! 🥰💙
               </h2>
+
+              {/* Advance Birthday Greeting Highlight */}
+              <div className="my-2.5 px-4 py-2 bg-gradient-to-r from-blue-50 via-sky-50 to-blue-50 rounded-2xl border border-sky-200 shadow-sm max-w-xs">
+                <p className="font-script text-2xl sm:text-3xl font-bold text-[#1E40AF]">
+                  Advance Happy Birthday Simjim! 🎂🎉✨
+                </p>
+                <p className="text-xs text-[#2563EB] font-semibold mt-0.5">
+                  May your year be filled with endless smiles, pampering & love! 💙
+                </p>
+              </div>
 
               {/* Subtitle */}
               <p className="text-base sm:text-lg text-[#1E40AF] font-medium max-w-sm mb-2 leading-relaxed">
